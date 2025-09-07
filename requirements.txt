@@ -2,3 +2,4 @@ flask
 flask-cors
 pennylane
 numpy
+waitress
