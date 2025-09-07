@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EchoShift - Quantum Brain Interface</title>
+    <style>
+      :root {
+        --quantum-blue: #00ffff;
+        --quantum-pink: #ff00ff;
+        --quantum-purple: #8a2be2;
+        --dark-bg: #05020a;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--dark-bg);
+        color: var(--quantum-blue);
+        font-family: "Orbitron", sans-serif;
+        cursor: pointer;
+        user-select: none;
+      }
+      #game-canvas {
+        display: block;
+      }
+      .ui-element {
+        position: absolute;
+        z-index: 10;
+        text-shadow: 0 0 8px var(--quantum-blue);
+      }
+      #hud {
+        top: 20px;
+        left: 20px;
+        font-size: 22px;
+        border: 1px solid var(--quantum-blue);
+        padding: 10px 15px;
+        background: rgba(5, 2, 10, 0.8);
+        border-radius: 5px;
+      }
+      #quantum-hud {
+        top: 20px;
+        right: 20px;
+        font-size: 16px;
+        border: 1px solid var(--quantum-purple);
+        padding: 10px 15px;
+        background: rgba(5, 2, 10, 0.8);
+        border-radius: 5px;
+        width: 280px;
+      }
+      #probability-display {
+        margin-top: 10px;
+      }
+      .probability-bar {
+        height: 10px;
+        background: linear-gradient(
+          90deg,
+          var(--quantum-blue),
+          var(--quantum-pink)
+        );
+        margin: 5px 0;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+      #message-container {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        display: none;
+        background: rgba(5, 2, 10, 0.9);
+        padding: 30px;
+        border-radius: 10px;
+        border: 2px solid var(--quantum-blue);
+        box-shadow: 0 0 30px var(--quantum-blue);
+      }
+      #message-title {
+        font-size: 72px;
+        color: var(--quantum-pink);
+        text-shadow: 0 0 15px var(--quantum-pink), 0 0 25px var(--quantum-pink);
+        margin-bottom: 20px;
+      }
+      #message-subtitle {
+        font-size: 24px;
+        color: var(--quantum-blue);
+        margin-top: 10px;
+      }
+      #message-details {
+        font-size: 18px;
+        color: var(--quantum-blue);
+        margin-top: 20px;
+        /*max-width: 500px;*/
+        line-height: 1.5;
+        text-align: center;
+      }
+      #replay-button {
+        margin-top: 30px;
+        padding: 15px 30px;
+        font-size: 20px;
+        color: #05020a;
+        background: var(--quantum-blue);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 0 15px var(--quantum-blue);
+        border-radius: 5px;
+        font-family: "Orbitron", sans-serif;
+      }
+      #replay-button:hover {
+        background: var(--quantum-pink);
+        color: #ffffff;
+        box-shadow: 0 0 25px var(--quantum-pink);
+      }
+      #intro-screen {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        max-width: 700px;
+        background: rgba(5, 2, 10, 0.9);
+        padding: 40px;
+        border-radius: 10px;
+        border: 2px solid var(--quantum-blue);
+        box-shadow: 0 0 30px var(--quantum-blue);
+      }
+      #intro-screen h1 {
+        font-size: 48px;
+        color: var(--quantum-pink);
+        text-shadow: 0 0 10px var(--quantum-pink);
+        margin-bottom: 20px;
+      }
+      #intro-screen p {
+        font-size: 18px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      #controls {
+        margin-top: 30px;
+        text-align: left;
+        font-size: 16px;
+      }
+      #controls h3 {
+        color: var(--quantum-pink);
+        margin-bottom: 10px;
+      }
+      #controls ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      #controls li {
+        margin-bottom: 8px;
+      }
+      .key {
+        display: inline-block;
+        padding: 2px 6px;
+        background: rgba(0, 255, 255, 0.2);
+        border: 1px solid var(--quantum-blue);
+        border-radius: 4px;
+        margin-right: 5px;
+      }
+      #start-button {
+        margin-top: 30px;
+        padding: 15px 40px;
+        font-size: 20px;
+        color: #05020a;
+        background: var(--quantum-blue);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 0 15px var(--quantum-blue);
+        border-radius: 5px;
+        font-family: "Orbitron", sans-serif;
+      }
+      #start-button:hover {
+        background: var(--quantum-pink);
+        color: #ffffff;
+        box-shadow: 0 0 25px var(--quantum-pink);
+      }
+      #quantum-effects {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 5;
+      }
+      .quantum-distortion {
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          var(--quantum-blue) 0%,
+          transparent 70%
+        );
+        opacity: 0.3;
+        filter: blur(5px);
+      }
+      .phase-indicator {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        background: rgba(5, 2, 10, 0.8);
+        border: 1px solid var(--quantum-blue);
+        border-radius: 5px;
+        font-size: 18px;
+        text-align: center;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- LIBS -->
+    <script src="  https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js  "></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js  "></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js  "></script>
+  </head>
+  <body>
+    <!-- UI Elements -->
+    <div id="hud" class="ui-element">
+      <div>
+        Steps: <span id="stepCount">0</span>/<span id="echoTriggerStep">0</span>
+      </div>
+      <div>Phase: <span id="gamePhase">Forward</span></div>
+      <div>Collapses: <span id="collapseCount">0</span></div>
+    </div>
+    <div id="quantum-hud" class="ui-element">
+      <div>
+        Quantum State: <span id="quantumState">|ψ⟩ = 0.71|0⟩ + 0.71|1⟩</span>
+      </div>
+    </div>
+    <div id="phase-indicator" class="ui-element phase-indicator">
+      Current Phase: <span id="current-phase-text">Forward Movement</span>
+    </div>
+    <div id="intro-screen" class="ui-element">
+      <h1>ECHO_SHIFT</h1>
+      <p>
+        A cascading noise echo is corrupting the Quantum Brain. You must pilot a
+        quantum particle through the lattice to restore the memory shard. Beware
+        of collapsing pathways.
+      </p>
+      <p>
+        <strong>Quantum Mechanics:</strong> Your particle exists in
+        superposition. The quantum echo will automatically reverse your path
+        after several moves.
+      </p>
+      <div id="controls">
+        <h3>Controls:</h3>
+        <ul>
+          <li>
+            <span class="key">WASD</span> /
+            <span class="key">Arrow Keys</span> - Move particle
+          </li>
+        </ul>
+      </div>
+      <button id="start-button">BEGIN QUANTUM SIMULATION</button>
+    </div>
+    <div id="message-container" class="ui-element">
+      <div id="message-title">VICTORY</div>
+      <div id="message-subtitle">Memory Restored</div>
+      <div id="message-details">
+        You've successfully navigated the quantum lattice and preserved the
+        memory fragment. The quantum brain is stabilizing...
+      </div>
+      <button id="replay-button">QUANTUM REINITIALIZATION</button>
+    </div>
+    <div id="quantum-effects"></div>
+    <script>
+      // --- Config & Setup ---
+      const BACKEND = "http://127.0.0.1:5000"; // Flask server
+      const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: 0x05020a,
+        antialias: true,
+        resizeTo: window,
+      });
+      document.body.appendChild(app.view);
+      app.view.id = "game-canvas";
+      // --- Sound Engine ---
+      const sounds = {
+        step: new Howl({ src: ["sounds/step.mp3"], volume: 0.6 }),
+        collapse: new Howl({ src: ["sounds/collapse.mp3"], volume: 0.8 }),
+        echo: new Howl({ src: ["sounds/echo.mp3"], volume: 0.7 }),
+        start: new Howl({ src: ["sounds/start.mp3"], volume: 0.8 }),
+        win: new Howl({ src: ["sounds/win.mp3"], volume: 0.8 }),
+        lose: new Howl({ src: ["sounds/lose.mp3"], volume: 0.8 }),
+        amplify: new Howl({ src: ["sounds/amplify.mp3"], volume: 0.7 }),
+        quantum: new Howl({
+          src: ["sounds/quantum.mp3"],
+          volume: 0.5,
+          loop: true,
+        }),
+      };
+      // --- Game State Variables ---
+      let steps = 0;
+      let collapses = 0;
+      let pathHistory = [];
+      let echoPath = []; // Tracks the echo path during rewind
+      let collapsedTiles = new Set();
+      let gameActive = false;
+      let echoTriggerStep; // Will be set to random value between 3-8
+      let targetPosition = { r: 0, c: 0 };
+      let probabilityData = Array(9).fill(0.11); // 3x3 grid probabilities
+      let quantumState = { alpha: 0.707, beta: 0.707 };
+      let entanglement = 0;
+      let isEchoing = false; // Tracks if we're in echo phase
+      let phase = "forward"; // "forward", "collapse", or "echo"
+      let pathFidelity = 100; // Tracks the integrity of the quantum path
+      let currentEchoPath = []; // Stores the actual echo path for verification
+      let quantumPathGraphics; // Visualizes the quantum path
+      let echoPathIndices = new Set(); // Tracks which tiles are in the echo path
+      // --- Grid Constants ---
+      const GRID_ROWS = 3;
+      const GRID_COLS = 3;
+      const TILE_SIZE = 80;
+      const TILE_SPACING_X = TILE_SIZE * 1.5;
+      const TILE_SPACING_Y = TILE_SIZE * Math.sqrt(3);
+      // --- PIXI Containers ---
+      const backgroundContainer = new PIXI.Container();
+      const gridContainer = new PIXI.Container();
+      const particleContainer = new PIXI.Container();
+      const effectContainer = new PIXI.Container();
+      const probabilityContainer = new PIXI.Container();
+      const echoPathContainer = new PIXI.Container(); // Dedicated container for echo path
+      const quantumPathContainer = new PIXI.Container(); // For quantum path visualization
+      app.stage.addChild(
+        backgroundContainer,
+        gridContainer,
+        probabilityContainer,
+        echoPathContainer,
+        quantumPathContainer,
+        effectContainer,
+        particleContainer
+      );
+      // --- Game Objects ---
+      let grid = [];
+      let particle;
+      let particleStateText;
+      let particlePos = { r: 1, c: 1 }; // Start in center
+      let echoPathGraphics; // Visualizes the echo path
+      let targetStar; // Replaces the green hexagon
+      // --- UI Elements ---
+      const stepCountEl = document.getElementById("stepCount");
+      const echoTriggerStepEl = document.getElementById("echoTriggerStep");
+      const collapseCountEl = document.getElementById("collapseCount");
+      const gamePhaseEl = document.getElementById("gamePhase");
+      const quantumStateEl = document.getElementById("quantumState");
+      const phaseIndicatorEl = document.getElementById("phase-indicator");
+      const currentPhaseTextEl = document.getElementById("current-phase-text");
+      const messageContainer = document.getElementById("message-container");
+      const messageTitle = document.getElementById("message-title");
+      const messageSubtitle = document.getElementById("message-subtitle");
+      const messageDetails = document.getElementById("message-details");
+      const replayButton = document.getElementById("replay-button");
+      const introScreen = document.getElementById("intro-screen");
+      const startButton = document.getElementById("start-button");
+      const quantumEffectsEl = document.getElementById("quantum-effects");
+      // Initialize probability display
+      function initProbabilityDisplay() {
+        /*probabilityDisplayEl.innerHTML = "<div>Position Probabilities:</div>";
+        for (let i = 0; i < GRID_ROWS * GRID_COLS; i++) {
+          const row = Math.floor(i / GRID_COLS);
+          const col = i % GRID_COLS;
+          const probElement = document.createElement("div");
+          probElement.innerHTML = `(${row},${col}): <div class="probability-bar" style="width: ${
+            probabilityData[i] * 100
+          }%"></div>`;
+          probElement.id = `prob-${i}`;
+          probabilityDisplayEl.appendChild(probElement);
+        }*/
+      }
+      // =================================================================
+      // --- INITIALIZATION & GAME LOOP
+      // =================================================================
+      function createBackground() {
+        // Create quantum flux background
+        for (let i = 0; i < 100; i++) {
+          createQuantumDistortion();
+        }
+        // Create stars
+        for (let i = 0; i < 200; i++) {
+          const star = new PIXI.Graphics();
+          star.beginFill(0x00ffff, Math.random() * 0.5 + 0.1);
+          star.drawCircle(0, 0, Math.random() * 1.5 + 0.5);
+          star.endFill();
+          star.x = Math.random() * window.innerWidth;
+          star.y = Math.random() * window.innerHeight;
+          star.vx = (Math.random() - 0.5) * 0.2;
+          star.vy = (Math.random() - 0.5) * 0.2;
+          backgroundContainer.addChild(star);
+        }
+      }
+      function createQuantumDistortion() {
+        const distortion = document.createElement("div");
+        distortion.className = "quantum-distortion";
+        distortion.style.left = `${Math.random() * 100}%`;
+        distortion.style.top = `${Math.random() * 100}%`;
+        distortion.style.width = `${Math.random() * 100 + 50}px`;
+        distortion.style.height = distortion.style.width;
+        distortion.style.opacity = Math.random() * 0.2;
+        quantumEffectsEl.appendChild(distortion);
+        // Animate the distortion
+        gsap.to(distortion, {
+          x: (Math.random() - 0.5) * 200,
+          y: (Math.random() - 0.5) * 200,
+          rotation: Math.random() * 360,
+          duration: Math.random() * 10 + 10,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+      async function initGame() {
+        // Reset state
+        steps = 0;
+        collapses = 0;
+        particlePos = { r: 1, c: 1 };
+        pathHistory = [{ ...particlePos }];
+        echoPath = []; // Reset echo path
+        currentEchoPath = [];
+        collapsedTiles.clear();
+        echoPathIndices.clear();
+        gameActive = true;
+        isEchoing = false;
+        phase = "forward";
+        pathFidelity = 100;
+
+        // Update phase indicator
+        currentPhaseTextEl.innerText = "Forward Movement";
+        phaseIndicatorEl.style.borderColor = "var(--quantum-blue)";
+
+        // Get echo trigger step from server
+        try {
+          const response = await fetch(`${BACKEND}/echo-trigger`);
+          const data = await response.json();
+          echoTriggerStep = data.echo_trigger_step;
+        } catch (error) {
+          console.error("Failed to get echo trigger step:", error);
+          echoTriggerStep = Math.floor(Math.random() * 6) + 3; // Fallback
+        }
+
+        entanglement = 0;
+        // Generate target position (not the center)
+        do {
+          targetPosition = {
+            r: Math.floor(Math.random() * GRID_ROWS),
+            c: Math.floor(Math.random() * GRID_COLS),
+          };
+        } while (targetPosition.r === 1 && targetPosition.c === 1);
+
+        // Initialize probabilities (higher near center)
+        probabilityData = Array(9)
+          .fill(0)
+          .map((_, i) => {
+            const r = Math.floor(i / GRID_COLS);
+            const c = i % GRID_COLS;
+            const distance = Math.sqrt(Math.pow(r - 1, 2) + Math.pow(c - 1, 2));
+            return Math.max(0.05, 0.2 - distance * 0.05);
+          });
+        // Normalize probabilities
+        const total = probabilityData.reduce((sum, val) => sum + val, 0);
+        probabilityData = probabilityData.map((p) => p / total);
+
+        // Update UI
+        stepCountEl.innerText = "0";
+        echoTriggerStepEl.innerText = echoTriggerStep;
+        gamePhaseEl.innerText = "Forward";
+        collapseCountEl.innerText = "0";
+        quantumStateEl.innerText = "|ψ⟩ = 0.71|0⟩ + 0.71|1⟩";
+
+        messageContainer.style.display = "none";
+        introScreen.style.display = "none";
+
+        // Clear PIXI containers
+        gridContainer.removeChildren();
+        particleContainer.removeChildren();
+        effectContainer.removeChildren();
+        probabilityContainer.removeChildren();
+        echoPathContainer.removeChildren();
+        quantumPathContainer.removeChildren();
+
+        grid = [];
+
+        // --- Create Hexagonal Grid ---
+        for (let r = 0; r < GRID_ROWS; r++) {
+          for (let c = 0; c < GRID_COLS; c++) {
+            const tile = new PIXI.Graphics();
+            drawHexagon(tile, TILE_SIZE, 0x00ffff);
+            tile.alpha = 0.3;
+            // Staggered layout for hex
+            const offsetX = (r % 2) * (TILE_SPACING_X / 2);
+            tile.x =
+              c * TILE_SPACING_X + offsetX - (GRID_COLS * TILE_SPACING_X) / 2;
+            tile.y =
+              r * (TILE_SPACING_Y * 0.75) -
+              (GRID_ROWS * TILE_SPACING_Y * 0.75) / 2;
+            tile.interactive = true;
+            tile.pulsateOffset = Math.random() * Math.PI * 2;
+            tile.gridPos = { r, c };
+            // Add probability indicator
+            const probIndicator = new PIXI.Graphics();
+            probIndicator.visible = false;
+            probabilityContainer.addChild(probIndicator);
+            grid.push({ tile, probIndicator });
+            gridContainer.addChild(tile);
+          }
+        }
+
+        // Create target star (replaces green hexagon)
+        targetStar = new PIXI.Graphics();
+        const n = 5;
+        const outerRadius = TILE_SIZE * 0.4;
+        const innerRadius = TILE_SIZE * 0.2;
+        targetStar.lineStyle(2, 0xffffff, 1);
+        targetStar.beginFill(0xffff00, 0.5);
+        for (let i = 0; i < n * 2; i++) {
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (i * Math.PI) / n - Math.PI / 2;
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+          if (i === 0) {
+            targetStar.moveTo(x, y);
+          } else {
+            targetStar.lineTo(x, y);
+          }
+        }
+        targetStar.closePath();
+        targetStar.endFill();
+        gridContainer.addChild(targetStar);
+        updateTargetStar();
+
+        // Create path visualization graphics
+        echoPathGraphics = new PIXI.Graphics();
+        echoPathContainer.addChild(echoPathGraphics);
+
+        quantumPathGraphics = new PIXI.Graphics();
+        quantumPathContainer.addChild(quantumPathGraphics);
+
+        gridContainer.x = app.screen.width / 2;
+        gridContainer.y = app.screen.height / 2;
+        probabilityContainer.x = gridContainer.x;
+        probabilityContainer.y = gridContainer.y;
+        echoPathContainer.x = gridContainer.x;
+        echoPathContainer.y = gridContainer.y;
+        quantumPathContainer.x = gridContainer.x;
+        quantumPathContainer.y = gridContainer.y;
+
+        // --- Create Quantum Particle ---
+        particle = new PIXI.Graphics();
+        particle.beginFill(0xff00ff);
+        particle.drawCircle(0, 0, 15);
+        particle.endFill();
+        particle.filters = [new PIXI.BlurFilter(8)];
+        particleStateText = new PIXI.Text("|ψ⟩", {
+          fontFamily: "Orbitron",
+          fontSize: 20,
+          fill: 0xffffff,
+          align: "center",
+        });
+        particleStateText.anchor.set(0.5, 2.0);
+        gridContainer.addChild(particle, particleStateText);
+
+        updateParticlePosition(false); // Initial placement, no animation
+
+        // Start quantum ambient sound
+        sounds.quantum.play();
+
+        // Initialize backend
+        try {
+          await fetch(`${BACKEND}/init`, { method: "POST" });
+          await updateQuantumStateFromServer();
+        } catch (error) {
+          console.error("Failed to initialize backend:", error);
+        }
+      }
+
+      function updateTargetStar() {
+        const targetPos = getTilePosition(targetPosition.r, targetPosition.c);
+        targetStar.x = targetPos.x;
+        targetStar.y = targetPos.y;
+      }
+
+      // =================================================================
+      // --- CORE GAME MECHANICS
+      // =================================================================
+      async function moveParticle(dr, dc) {
+        if (!gameActive || isEchoing || phase !== "forward") return;
+
+        const newR = particlePos.r + dr;
+        const newC = particlePos.c + dc;
+
+        // Grid boundary check
+        if (newR < 0 || newR >= GRID_ROWS || newC < 0 || newC >= GRID_COLS) {
+          return;
+        }
+
+        // Check if the new tile is collapsed
+        const newIndex = coordToIndex({ r: newR, c: newC });
+        if (collapsedTiles.has(newIndex)) {
+          endGame(false, "Collapsed Path");
+          return;
+        }
+
+        // Get current position from server
+        let fromPos = 4; // Default to center
+        try {
+          const response = await fetch(`${BACKEND}/state`);
+          const data = await response.json();
+          if (data.current_position !== undefined) {
+            fromPos = data.current_position;
+          }
+        } catch (error) {
+          console.error("Failed to get current position:", error);
+        }
+
+        const toPos = coordToIndex({ r: newR, c: newC });
+
+        particlePos = { r: newR, c: newC };
+        pathHistory.push({ ...particlePos });
+        steps++;
+        stepCountEl.innerText = steps;
+
+        updateParticlePosition(true); // Animate the move
+        updatePath(); // Update the path visualization
+
+        sounds.step.play();
+
+        // Update quantum state text
+        const alpha = Math.random() * 0.7 + 0.3;
+        const beta = Math.sqrt(1 - alpha * alpha);
+        quantumState = { alpha, beta };
+        quantumStateEl.textContent = `|ψ⟩ = ${alpha.toFixed(
+          2
+        )}|0⟩ + ${beta.toFixed(2)}|1⟩`;
+
+        // Increase entanglement with movement
+        entanglement = Math.min(100, entanglement + 5);
+
+        // Send move to quantum server with from/to positions
+        try {
+          await fetch(`${BACKEND}/move`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: fromPos,
+              to: toPos,
+            }),
+          });
+          await updateQuantumStateFromServer();
+        } catch (error) {
+          console.error("Failed to send move to server:", error);
+        }
+
+        // Check if we've reached the echo trigger point
+        if (steps >= echoTriggerStep) {
+          // Enter collapse phase before echo
+          phase = "collapse";
+          gamePhaseEl.innerText = "Collapse";
+          currentPhaseTextEl.innerText = "Collapse Phase";
+          phaseIndicatorEl.style.borderColor = "var(--quantum-pink)";
+          
+          // Trigger collapses at the end of steps
+          setTimeout(triggerCollapsePhase, 1000);
+        }
+      }
+
+      async function triggerCollapsePhase() {
+        if (!gameActive || phase !== "collapse") return;
+        
+        // Trigger 1-3 collapses (but not on echo path)
+        const numCollapses = Math.floor(Math.random() * 3) + 1;
+        
+        for (let i = 0; i < numCollapses; i++) {
+          // Wait between collapses for visual effect
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Find available tiles to collapse (not current, not target, not in echo path)
+          const availableTiles = [];
+          for (let r = 0; r < GRID_ROWS; r++) {
+            for (let c = 0; c < GRID_COLS; c++) {
+              const index = coordToIndex({ r, c });
+              if (
+                !collapsedTiles.has(index) &&
+                !(r === particlePos.r && c === particlePos.c) &&
+                !(r === targetPosition.r && c === targetPosition.c) &&
+                !echoPathIndices.has(index) // Very important: not in echo path
+              ) {
+                availableTiles.push(index);
+              }
+            }
+          }
+
+          if (availableTiles.length > 0) {
+            const randomIndex =
+              availableTiles[Math.floor(Math.random() * availableTiles.length)];
+            collapseTile(randomIndex);
+            collapses++;
+            collapseCountEl.innerText = collapses;
+
+            // Send collapse to server
+            try {
+              const response = await fetch(`${BACKEND}/collapse`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  position: randomIndex,
+                  strength: 0.15,
+                }),
+              });
+              
+              const data = await response.json();
+              if (data.skipped) {
+                // Server prevented collapse because it's on echo path
+                console.warn("Collapse skipped on echo path position");
+                collapses--; // Don't count this collapse
+                collapseCountEl.innerText = collapses;
+              } else {
+                await updateQuantumStateFromServer();
+              }
+            } catch (error) {
+              console.error("Failed to send collapse:", error);
+            }
+          }
+        }
+        
+        // After collapses, trigger echo
+        setTimeout(triggerQuantumEcho, 1000);
+      }
+
+      async function triggerQuantumEcho() {
+        if (!gameActive || isEchoing || phase !== "collapse") return;
+
+        phase = "echo";
+        isEchoing = true;
+        gamePhaseEl.innerText = "Echo";
+        currentPhaseTextEl.innerText = "Echo Phase";
+        phaseIndicatorEl.style.borderColor = "var(--quantum-purple)";
+
+        // Send echo to server first
+        let verificationData = null;
+        try {
+          const response = await fetch(`${BACKEND}/echo`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const data = await response.json();
+          verificationData = data;
+          
+          // Store echo path indices for collapse protection
+          if (data.echo_path) {
+            echoPathIndices = new Set(data.echo_path);
+          }
+        } catch (error) {
+          console.error("Failed to trigger echo:", error);
+        }
+
+        // Start the echo sequence
+        const echoSequence = gsap.timeline({
+          onComplete: () => {
+            isEchoing = false;
+            // Check path validity from server
+            if (verificationData && !verificationData.valid_path) {
+              endGame(false, "Invalid Echo Path");
+            } else {
+              // Check if we reached the target during echo
+              const reachedTarget = pathHistory.some(pos => 
+                pos.r === targetPosition.r && pos.c === targetPosition.c
+              );
+              
+              if (reachedTarget) {
+                endGame(true);
+              } else {
+                endGame(false, "Echo Completed Without Reaching Target");
+              }
+            }
+          },
+        });
+
+        // Rewind the path one step at a time
+        for (let i = pathHistory.length - 2; i >= 0; i--) {
+          const step = pathHistory[i];
+          const delay = (pathHistory.length - 2 - i) * 0.3; // Staggered delay
+
+          echoSequence.add(() => {
+            // Move to previous position
+            particlePos = { ...step };
+            updateParticlePosition(true);
+            updateEchoPath(); // Update the echo path visualization
+
+            // Check for collapse during echo
+            const index = coordToIndex(particlePos);
+            if (collapsedTiles.has(index)) {
+              endGame(false, "Collapsed Path During Echo");
+              echoSequence.kill(); // Stop the sequence
+              return;
+            }
+          }, delay);
+        }
+
+        sounds.echo.play();
+
+        // Update state after echo
+        updateQuantumStateFromServer().catch(console.error);
+      }
+
+      async function useAmplification() {
+        if (!gameActive || isEchoing || phase !== "forward") return;
+
+        const targetIndex = coordToIndex(targetPosition);
+
+        // Send amplification to server
+        try {
+          await fetch(`${BACKEND}/amplify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target_index: targetIndex }),
+          });
+          await updateQuantumStateFromServer();
+        } catch (error) {
+          console.error("Failed to amplify:", error);
+        }
+
+        sounds.amplify.play();
+
+        // Visual feedback
+        gsap.to(targetStar.scale, {
+          x: 1.5,
+          y: 1.5,
+          duration: 0.2,
+          yoyo: true,
+          repeat: 1,
+        });
+      }
+
+      async function updateQuantumStateFromServer() {
+        try {
+          const response = await fetch(`${BACKEND}/state`);
+          const data = await response.json();
+
+          if (data.probs && data.probs.grid_probs) {
+            probabilityData = data.probs.grid_probs;
+            updateProbabilityDisplay();
+          }
+        } catch (error) {
+          console.error("Failed to update quantum state:", error);
+        }
+      }
+
+      function updateProbabilityDisplay() {
+        // Update HTML display
+        probabilityData.forEach((prob, i) => {
+          const probElement = document.getElementById(`prob-${i}`);
+          if (probElement) {
+            const bar = probElement.querySelector(".probability-bar");
+            if (bar) {
+              bar.style.width = `${prob * 100}%`;
+            }
+          }
+        });
+
+        // Update visual indicators
+        grid.forEach((cell, i) => {
+          const { probIndicator } = cell;
+          if (probabilityData[i] > 0.15) {
+            probIndicator.visible = true;
+            probIndicator.alpha = probabilityData[i] * 2;
+            probIndicator.scale.set(probabilityData[i] * 2);
+          } else {
+            probIndicator.visible = false;
+          }
+        });
+      }
+
+      function endGame(victory, reason = "Normal Completion") {
+        gameActive = false;
+        isEchoing = false;
+        sounds.quantum.stop();
+
+        if (victory) {
+          messageTitle.innerText = "QUANTUM VICTORY";
+          messageSubtitle.innerText = "Memory Shard Secured";
+          messageDetails.innerText =
+            "You've successfully navigated the quantum lattice and preserved the memory fragment. The quantum brain is stabilizing...";
+          sounds.win.play();
+        } else {
+          messageTitle.innerText = "QUANTUM COLLAPSE";
+          messageSubtitle.innerText = "Wavefunction Terminated";
+          messageDetails.innerText =
+            reason === "Collapsed Path" || reason === "Collapsed Path During Echo"
+              ? "Your path collapsed during the echo phase. The memory fragment has been lost to noise."
+              : reason === "Echo Completed Without Reaching Target"
+              ? "The echo completed without reaching the goal. The memory fragment could not be secured."
+              : reason === "Invalid Echo Path"
+              ? "The echo path verification failed. Quantum coherence was lost."
+              : "The quantum decoherence has overwhelmed your particle. The memory fragment has been lost to noise.";
+          sounds.lose.play();
+        }
+
+        setTimeout(() => {
+          messageContainer.style.display = "block";
+        }, 1500);
+      }
+
+      // =================================================================
+      // --- VISUAL & AUDIO EFFECTS
+      // =================================================================
+      function collapseTile(index) {
+        const cell = grid[index];
+        if (!cell) return;
+        const { tile, probIndicator } = cell;
+        collapsedTiles.add(index);
+        tile.alpha = 0.1; // Dim the tile instead of hiding it
+        probIndicator.visible = false;
+
+        // Create collapse effect
+        for (let i = 0; i < 6; i++) {
+          const fragment = new PIXI.Graphics();
+          const angle = (Math.PI / 3) * i;
+          const nextAngle = (Math.PI / 3) * (i + 1);
+          fragment.beginFill(0xff0000);
+          fragment.moveTo(0, 0);
+          fragment.lineTo(
+            Math.cos(angle) * TILE_SIZE,
+            Math.sin(angle) * TILE_SIZE
+          );
+          fragment.lineTo(
+            Math.cos(nextAngle) * TILE_SIZE,
+            Math.sin(nextAngle) * TILE_SIZE
+          );
+          fragment.closePath();
+          fragment.endFill();
+          fragment.x = tile.x;
+          fragment.y = tile.y;
+          effectContainer.addChild(fragment);
+
+          gsap.to(fragment, {
+            x: `+=${(Math.random() - 0.5) * 200}`,
+            y: `+=${(Math.random() - 0.5) * 200}`,
+            alpha: 0,
+            rotation: (Math.random() - 0.5) * 5,
+            duration: 0.8 + Math.random() * 0.5,
+            ease: "power2.out",
+            onComplete: () => effectContainer.removeChild(fragment),
+          });
+        }
+      }
+
+      function updatePath() {
+        // Clear previous path
+        echoPathContainer.removeChildren();
+
+        // Create new path graphics
+        echoPathGraphics = new PIXI.Graphics();
+        echoPathContainer.addChild(echoPathGraphics);
+
+        // Draw the forward path
+        if (pathHistory.length > 1) {
+          echoPathGraphics.lineStyle(4, 0x00ffff, 0.5);
+          for (let i = 0; i < pathHistory.length; i++) {
+            const pos = pathHistory[i];
+            const screenPos = getTilePosition(pos.r, pos.c);
+            if (i === 0) {
+              echoPathGraphics.moveTo(screenPos.x, screenPos.y);
+            } else {
+              echoPathGraphics.lineTo(screenPos.x, screenPos.y);
+            }
+          }
+        }
+      }
+
+      function updateEchoPath() {
+        // Update the echo path visualization
+        if (pathHistory.length > 1) {
+          // Clear and redraw the entire path
+          echoPathGraphics.clear();
+
+          // Draw the forward path (faint)
+          echoPathGraphics.lineStyle(3, 0x00ffff, 0.3);
+          for (let i = 0; i < pathHistory.length; i++) {
+            const pos = pathHistory[i];
+            const screenPos = getTilePosition(pos.r, pos.c);
+            if (i === 0) {
+              echoPathGraphics.moveTo(screenPos.x, screenPos.y);
+            } else {
+              echoPathGraphics.lineTo(screenPos.x, screenPos.y);
+            }
+          }
+
+          // Highlight the echo path (brighter)
+          echoPathGraphics.lineStyle(5, 0xffff00, 0.8);
+          for (let i = 0; i < pathHistory.length; i++) {
+            const pos = pathHistory[i];
+            const screenPos = getTilePosition(pos.r, pos.c);
+            if (i === 0) {
+              echoPathGraphics.moveTo(screenPos.x, screenPos.y);
+            } else {
+              echoPathGraphics.lineTo(screenPos.x, screenPos.y);
+            }
+          }
+        }
+      }
+
+      app.ticker.add((delta) => {
+        // Pulsating grid
+        grid.forEach((cell) => {
+          const { tile } = cell;
+          if (tile.alpha > 0.1) {
+            const scale =
+              1 + Math.sin(Date.now() * 0.001 + tile.pulsateOffset) * 0.03;
+            tile.scale.set(scale);
+          }
+        });
+
+        // Drifting background particles
+        backgroundContainer.children.forEach((star) => {
+          star.x += star.vx * delta;
+          star.y += star.vy * delta;
+          if (star.x < 0 || star.x > app.screen.width) star.vx *= -1;
+          if (star.y < 0 || star.y > app.screen.height) star.vy *= -1;
+        });
+
+        // Pulsate probability indicators
+        probabilityContainer.children.forEach((indicator) => {
+          if (indicator.visible) {
+            indicator.scale.x = 0.8 + Math.sin(Date.now() * 0.003) * 0.2;
+            indicator.scale.y = 0.8 + Math.sin(Date.now() * 0.003) * 0.2;
+          }
+        });
+
+        // Pulsate target star
+        if (targetStar) {
+          const scale = 0.8 + Math.sin(Date.now() * 0.002) * 0.2;
+          targetStar.scale.set(scale);
+        }
+      });
+
+      // =================================================================
+      // --- HELPER FUNCTIONS
+      // =================================================================
+      function coordToIndex({ r, c }) {
+        return r * GRID_COLS + c;
+      }
+
+      function getTilePosition(r, c) {
+        const cell = grid[coordToIndex({ r, c })];
+        if (!cell) return { x: 0, y: 0 };
+        const { tile } = cell;
+        return { x: tile.x, y: tile.y };
+      }
+
+      function updateParticlePosition(animated = true) {
+        const targetPos = getTilePosition(particlePos.r, particlePos.c);
+        if (animated) {
+          gsap.to(particle, {
+            duration: 0.4,
+            x: targetPos.x,
+            y: targetPos.y,
+            ease: "elastic.out(1, 0.5)",
+          });
+          gsap.to(particleStateText, {
+            duration: 0.4,
+            x: targetPos.x,
+            y: targetPos.y,
+            ease: "elastic.out(1, 0.5)",
+          });
+        } else {
+          particle.x = targetPos.x;
+          particle.y = targetPos.y;
+          particleStateText.x = targetPos.x;
+          particleStateText.y = targetPos.y;
+        }
+      }
+
+      function drawHexagon(graphics, size, color) {
+        graphics.lineStyle(2, color, 0.8);
+        graphics.beginFill(color, 0.1);
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i;
+          const x = size * Math.cos(angle);
+          const y = size * Math.sin(angle);
+          if (i === 0) graphics.moveTo(x, y);
+          else graphics.lineTo(x, y);
+        }
+        graphics.closePath();
+        graphics.endFill();
+      }
+
+      // =================================================================
+      // --- EVENT LISTENERS
+      // =================================================================
+      window.addEventListener("keydown", (e) => {
+        if (!gameActive) return;
+
+        switch (e.key) {
+          case "q":
+          case "Q":
+            useAmplification();
+            break;
+          case "r":
+          case "R":
+            initGame();
+            break;
+        }
+
+        // Using "WASD" and Arrow Keys for movement (only during forward phase)
+        let dr = 0,
+          dc = 0;
+        switch (e.key) {
+          case "ArrowUp":
+          case "w":
+          case "W":
+            dr = -1;
+            break;
+          case "ArrowDown":
+          case "s":
+          case "S":
+            dr = 1;
+            break;
+          case "ArrowLeft":
+          case "a":
+          case "A":
+            dc = -1;
+            break;
+          case "ArrowRight":
+          case "d":
+          case "D":
+            dc = 1;
+            break;
+        }
+        if (dr !== 0 || dc !== 0) moveParticle(dr, dc);
+      });
+
+      replayButton.addEventListener("click", () => {
+        sounds.start.play();
+        initGame();
+      });
+
+      startButton.addEventListener("click", () => {
+        sounds.start.play();
+        initGame();
+      });
+
+      // --- Start Application ---
+      createBackground();
+      //initProbabilityDisplay();
+    </script>
+  </body>
+</html>
